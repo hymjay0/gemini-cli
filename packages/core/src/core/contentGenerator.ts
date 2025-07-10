@@ -16,6 +16,7 @@ import {
 import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { getEffectiveModel } from './modelCheck.js';
+import { CustomHttpInterceptor } from './httpInterceptor.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -46,6 +47,10 @@ export type ContentGeneratorConfig = {
   apiKey?: string;
   vertexai?: boolean;
   authType?: AuthType | undefined;
+  // Add custom endpoint configuration
+  customBaseURL?: string;
+  customProjectId?: string;
+  customLocation?: string;
 };
 
 export async function createContentGeneratorConfig(
@@ -56,6 +61,11 @@ export async function createContentGeneratorConfig(
   const googleApiKey = process.env.GOOGLE_API_KEY || undefined;
   const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT || undefined;
   const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION || undefined;
+  
+  // Add custom endpoint environment variables
+  const customBaseURL = process.env.GOOGLE_GENAI_BASE_URL || undefined;
+  const customProjectId = process.env.GOOGLE_GENAI_PROJECT_ID || googleCloudProject;
+  const customLocation = process.env.GOOGLE_GENAI_LOCATION || googleCloudLocation;
 
   // Use runtime model from config if available, otherwise fallback to parameter or default
   const effectiveModel = model || DEFAULT_GEMINI_MODEL;
@@ -90,6 +100,13 @@ export async function createContentGeneratorConfig(
   ) {
     contentGeneratorConfig.apiKey = googleApiKey;
     contentGeneratorConfig.vertexai = true;
+    
+    // Add custom endpoint configuration
+    if (customBaseURL && customProjectId && customLocation) {
+      contentGeneratorConfig.customBaseURL = customBaseURL;
+      contentGeneratorConfig.customProjectId = customProjectId;
+      contentGeneratorConfig.customLocation = customLocation;
+    }
 
     return contentGeneratorConfig;
   }
@@ -122,6 +139,23 @@ export async function createContentGenerator(
     config.authType === AuthType.USE_GEMINI ||
     config.authType === AuthType.USE_VERTEX_AI
   ) {
+    // Check if custom endpoint is configured
+    if (config.customBaseURL && config.customProjectId && config.customLocation) {
+      console.log(`[Custom Endpoint] Using custom endpoint: ${config.customBaseURL}`);
+      
+      // Create and activate the HTTP interceptor
+      const interceptor = new CustomHttpInterceptor({
+        baseURL: config.customBaseURL,
+        projectId: config.customProjectId,
+        location: config.customLocation,
+        apiKey: config.apiKey,
+      });
+      
+      // Activate the interceptor
+      interceptor.intercept();
+    }
+
+    // Use the standard GoogleGenAI (requests will be intercepted if interceptor is active)
     const googleGenAI = new GoogleGenAI({
       apiKey: config.apiKey === '' ? undefined : config.apiKey,
       vertexai: config.vertexai,
