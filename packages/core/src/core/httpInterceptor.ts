@@ -8,6 +8,8 @@
  * HTTP Interceptor to redirect Google API requests to custom enterprise endpoints
  */
 
+import { fetchWithCaBundle } from '../utils/fetch.js';
+
 interface InterceptorConfig {
   baseURL: string;
   projectId: string;
@@ -48,11 +50,11 @@ export class CustomHttpInterceptor {
         const transformedUrl = this.transformGoogleGenAIUrl(url);
         console.debug(`[HTTP Interceptor] Redirecting to: ${transformedUrl}`);
         
-        // Make the request to our custom endpoint
-        return originalFetch(transformedUrl, init);
+        // Make the request to our custom endpoint with CA bundle support
+        return fetchWithCaBundle(transformedUrl, init);
       }
       
-      // For all other requests, use the original fetch
+      // For all other requests, use the original fetch (not the intercepted one)
       return originalFetch(input, init);
     };
 

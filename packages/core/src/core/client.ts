@@ -512,6 +512,13 @@ export class GeminiClient {
         model,
         contents: curatedHistory,
       });
+    
+    // Handle enterprise mode where countTokens returns estimated tokens
+    if (originalTokenCount === 0) {
+      // In enterprise mode, token counting is disabled, so we skip compression
+      return null;
+    }
+    
     if (originalTokenCount === undefined) {
       console.warn(`Could not determine token count for model ${model}.`);
       return null;
@@ -571,6 +578,13 @@ export class GeminiClient {
         model: this.config.getModel(),
         contents: this.getChat().getHistory(),
       });
+    
+    // Handle enterprise mode where countTokens returns estimated tokens
+    if (newTokenCount === 0) {
+      // In enterprise mode, we can't get accurate token counts, so return null
+      return null;
+    }
+    
     if (newTokenCount === undefined) {
       console.warn('Could not determine compressed history token count.');
       return null;
