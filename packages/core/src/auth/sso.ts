@@ -105,4 +105,5 @@ class SsoAuthClient {
   }
 }
 
+export { SsoAuthClient };
 export const ssoAuth = new SsoAuthClient();

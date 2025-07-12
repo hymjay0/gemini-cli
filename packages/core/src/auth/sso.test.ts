@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import { Gaxios } from 'gaxios';
+
+// Set environment variables before importing the module
+process.env.SSO_SERVER = 'https://sso.example.com/auth';
+process.env.ADA_GENAI_SSO_ID = 'user';
+process.env.ADA_GENAI_SSO_PASSWORD = 'pass';
+
+// Now import the module
 import { ssoAuth } from './sso.js';
 
 vi.mock('fs');
@@ -24,14 +31,21 @@ describe('SsoAuthClient', () => {
   let existsSyncMock: any;
   let readFileSyncMock: any;
   let gaxiosRequestMock: any;
+  let ssoAuth: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     origEnv = { ...process.env };
+    // Set environment variables for each test
     setEnv({
       SSO_SERVER: TEST_SSO_URL,
       ADA_GENAI_SSO_ID: 'user',
       ADA_GENAI_SSO_PASSWORD: 'pass',
     });
+    
+    // Create a fresh instance for each test
+    const { SsoAuthClient } = await import('./sso.js');
+    ssoAuth = new SsoAuthClient();
+    
     readFileMock = vi.spyOn(fs.promises, 'readFile');
     writeFileMock = vi.spyOn(fs.promises, 'writeFile');
     existsSyncMock = vi.spyOn(fs, 'existsSync');
@@ -80,8 +94,12 @@ describe('SsoAuthClient', () => {
   });
 
   it('throws if SSO_SERVER is not set', async () => {
+    // Create a new instance without SSO_SERVER
     delete process.env.SSO_SERVER;
-    await expect(ssoAuth.getToken()).rejects.toThrow('SSO_SERVER environment variable is not set');
+    const { SsoAuthClient } = await import('./sso.js');
+    const testSsoAuth = new SsoAuthClient();
+    
+    await expect(testSsoAuth.getToken()).rejects.toThrow('SSO_SERVER environment variable is not set');
   });
 
   it('throws if network request fails', async () => {
