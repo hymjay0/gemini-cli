@@ -10,6 +10,8 @@ process.env.GOOGLE_GENAI_BASE_URL = 'https://your-enterprise-proxy.company.com';
 process.env.GOOGLE_GENAI_PROJECT_ID = 'your-project-id';
 process.env.GOOGLE_GENAI_LOCATION = 'us-central1';
 process.env.GOOGLE_API_KEY = 'your-api-key';
+// Uncomment for Bearer token authentication:
+// process.env.GOOGLE_ACCESS_TOKEN = 'ya29.a0...';  // Get with: gcloud auth print-access-token
 
 // Test enterprise endpoint configuration
 process.env.GEMINI_ENTERPRISE_GENERATE_CONTENT = 'true';
@@ -29,13 +31,14 @@ const interceptor = new CustomHttpInterceptor({
   projectId: process.env.GOOGLE_GENAI_PROJECT_ID,
   location: process.env.GOOGLE_GENAI_LOCATION,
   apiKey: process.env.GOOGLE_API_KEY,
+  accessToken: process.env.GOOGLE_ACCESS_TOKEN,
 });
 
 interceptor.intercept();
 
 async function testInterceptor() {
   console.log('Testing HTTP Interceptor...\n');
-
+  
   try {
     // Test 1: Test generateContent endpoint
     console.log('Test 1: Intercepting Google Generative AI request...');
