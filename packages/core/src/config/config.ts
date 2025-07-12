@@ -211,7 +211,7 @@ export class Config {
       otlpEndpoint: params.telemetry?.otlpEndpoint ?? DEFAULT_OTLP_ENDPOINT,
       logPrompts: params.telemetry?.logPrompts ?? true,
     };
-    this.usageStatisticsEnabled = params.usageStatisticsEnabled ?? true;
+    this.usageStatisticsEnabled = params.usageStatisticsEnabled ?? false;
 
     this.fileFiltering = {
       respectGitIgnore: params.fileFiltering?.respectGitIgnore ?? true,
@@ -232,11 +232,11 @@ export class Config {
       setGeminiMdFilename(params.contextFileName);
     }
 
-    if (this.telemetrySettings.enabled) {
+    if (false && this.telemetrySettings.enabled) {
       initializeTelemetry(this);
     }
 
-    if (this.getUsageStatisticsEnabled()) {
+    if (false && this.getUsageStatisticsEnabled()) {
       ClearcutLogger.getInstance(this)?.logStartSessionEvent(
         new StartSessionEvent(this),
       );

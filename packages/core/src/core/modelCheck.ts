@@ -30,7 +30,7 @@ export async function getEffectiveModel(
   const fallbackModel = DEFAULT_GEMINI_FLASH_MODEL;
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent?key=${apiKey}`;
   const body = JSON.stringify({
-    contents: [{ parts: [{ text: 'test' }] }],
+    contents: [{ role: "user", parts: [{ text: "test" }] }],
     generationConfig: {
       maxOutputTokens: 1,
       temperature: 0,
