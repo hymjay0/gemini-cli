@@ -8,6 +8,7 @@ import {
   DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
 } from '../config/models.js';
+import { fetchWithCaBundle } from '../utils/fetch.js';
 
 /**
  * Checks if the default "pro" model is rate-limited and returns a fallback "flash"
@@ -43,7 +44,7 @@ export async function getEffectiveModel(
   const timeoutId = setTimeout(() => controller.abort(), 2000); // 500ms timeout for the request
 
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetchWithCaBundle(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,

@@ -19,6 +19,7 @@ import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { getEffectiveModel } from './modelCheck.js';
 import { CustomHttpInterceptor } from './httpInterceptor.js';
+import { getSSOClient } from '../utils/ssoClient.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -128,6 +129,7 @@ export enum AuthType {
 export type ContentGeneratorConfig = {
   model: string;
   apiKey?: string;
+  accessToken?: string;
   vertexai?: boolean;
   authType?: AuthType | undefined;
   // Add custom endpoint configuration
@@ -213,6 +215,20 @@ export async function createContentGeneratorConfig(
   const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT || undefined;
   const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION || undefined;
   
+  // Get access token for enterprise authentication
+  let accessToken = process.env.GOOGLE_ACCESS_TOKEN || undefined;
+  
+  // If no access token in environment, try to get one from SSO client
+  if (!accessToken) {
+    try {
+      const ssoClient = getSSOClient();
+      accessToken = await ssoClient.getAccessToken();
+      console.debug('[Enterprise Mode] Retrieved access token from SSO client');
+    } catch (error) {
+      console.debug('[Enterprise Mode] Could not get access token from SSO client:', error instanceof Error ? error.message : String(error));
+    }
+  }
+  
   // Add custom endpoint environment variables
   const customBaseURL = process.env.GOOGLE_GENAI_BASE_URL || undefined;
   const customProjectId = process.env.GOOGLE_GENAI_PROJECT_ID || googleCloudProject;
@@ -250,9 +266,10 @@ export async function createContentGeneratorConfig(
 
   if (
     authType === AuthType.USE_VERTEX_AI &&
-    (googleApiKey || (googleCloudProject && googleCloudLocation))
+    (googleApiKey || accessToken || (googleCloudProject && googleCloudLocation))
   ) {
     contentGeneratorConfig.apiKey = googleApiKey;
+    contentGeneratorConfig.accessToken = accessToken;
     contentGeneratorConfig.vertexai = true;
     
     // Add custom endpoint configuration
@@ -319,6 +336,7 @@ export async function createContentGenerator(
         projectId: config.customProjectId,
         location: config.customLocation,
         apiKey: config.apiKey,
+        accessToken: config.accessToken,
       });
       
       // Activate the interceptor

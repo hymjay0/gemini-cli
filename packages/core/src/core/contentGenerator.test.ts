@@ -15,6 +15,11 @@ import { GoogleGenAI } from '@google/genai';
 
 vi.mock('../code_assist/codeAssist.js');
 vi.mock('@google/genai');
+vi.mock('../utils/ssoClient.js', () => ({
+  getSSOClient: vi.fn(() => ({
+    getAccessToken: vi.fn().mockRejectedValue(new Error('SSO client not available in test')),
+  })),
+}));
 
 describe('createContentGenerator', () => {
   it('should create a CodeAssistContentGenerator', async () => {

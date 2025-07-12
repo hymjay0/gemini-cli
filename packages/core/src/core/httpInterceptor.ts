@@ -15,6 +15,7 @@ interface InterceptorConfig {
   projectId: string;
   location: string;
   apiKey?: string;
+  accessToken?: string;
 }
 
 export class CustomHttpInterceptor {
@@ -50,8 +51,11 @@ export class CustomHttpInterceptor {
         const transformedUrl = this.transformGoogleGenAIUrl(url);
         console.debug(`[HTTP Interceptor] Redirecting to: ${transformedUrl}`);
         
+        // Prepare the request with proper authentication
+        const requestInit = this.prepareRequest(init);
+        
         // Make the request to our custom endpoint with CA bundle support
-        return fetchWithCaBundle(transformedUrl, init);
+        return fetchWithCaBundle(transformedUrl, requestInit);
       }
       
       // For all other requests, use the original fetch (not the intercepted one)
@@ -104,13 +108,15 @@ export class CustomHttpInterceptor {
     
     // Preserve the original method and query parameters
     const method = this.extractMethod(originalUrl.pathname);
-    // Add API key to query parameters
     let newUrl = `${this.config.baseURL}${newPath}${method}${originalUrl.search}`;
-    if (this.config.apiKey) {
+    
+    // Add API key to query parameters only if no Bearer token is used
+    if (this.config.apiKey && !this.config.accessToken) {
       const hasQuery = originalUrl.search && originalUrl.search.length > 0;
       const separator = hasQuery ? '&' : '?';
       newUrl += `${separator}key=${this.config.apiKey}`;
     }
+    
     return newUrl;
   }
 
@@ -121,6 +127,36 @@ export class CustomHttpInterceptor {
     // Look for method suffixes like :generateContent, :countTokens, :embedContent
     const methodMatch = pathname.match(/:([^/]+)$/);
     return methodMatch ? `:${methodMatch[1]}` : ':generateContent';
+  }
+
+  /**
+   * Prepare the request with proper authentication
+   */
+  private prepareRequest(init?: RequestInit): RequestInit {
+    const requestInit = { ...init };
+    
+    // Initialize headers if not present
+    if (!requestInit.headers) {
+      requestInit.headers = {};
+    }
+    
+    // Convert headers to plain object if needed
+    const headers = requestInit.headers instanceof Headers 
+      ? Object.fromEntries(requestInit.headers.entries())
+      : { ...requestInit.headers } as Record<string, string>;
+    
+    // Add Bearer token if available (enterprise authentication)
+    if (this.config.accessToken) {
+      headers['Authorization'] = `Bearer ${this.config.accessToken}`;
+    }
+    
+    // Remove API key from URL if using Bearer token
+    if (this.config.accessToken && !this.config.apiKey) {
+      // The URL transformation will not add the key parameter
+    }
+    
+    requestInit.headers = headers;
+    return requestInit;
   }
 
   /**
