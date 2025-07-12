@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { HttpsProxyAgent } from 'https-proxy-agent';
+import { Gaxios, GaxiosError } from 'gaxios';
 import * as fs from 'fs';
 
 class SsoAuthClient {
@@ -7,8 +6,9 @@ class SsoAuthClient {
   private readonly cachePath = '.ssotoken';
 
   constructor() {
-    this.ssoUrl = process.env.SSO_SERVER;
+    this.ssoUrl = process.env.SSO_SERVER || '';
   }
+  
   private async getTokenFromCache(): Promise<string | null> {
     try {
       const tokenData = await fs.promises.readFile(this.cachePath, 'utf-8');
@@ -34,6 +34,10 @@ class SsoAuthClient {
   }
 
   async getToken(): Promise<string> {
+    if (!this.ssoUrl) {
+      throw new Error('SSO_SERVER environment variable is not set');
+    }
+    
     console.log(`SSO URL: ${this.ssoUrl}`);
     const cachedToken = await this.getTokenFromCache();
     if (cachedToken) {
@@ -41,34 +45,35 @@ class SsoAuthClient {
     }
 
     try {
-      const proxy = process.env.https_proxy || process.env.HTTPS_PROXY;
       const caFile = process.env.REQUESTS_CA_BUNDLE || process.env.SSL_CERT_FILE;
 
-      const agentOptions: any = {};
-      if (caFile) {
-        agentOptions.ca = fs.readFileSync(caFile);
-      }
-
-      const requestConfig: {
-        headers: { 'Content-Type': string };
-        httpsAgent?: HttpsProxyAgent<string>;
-      } = {
+      // Prepare gaxios options with CA bundle support if needed
+      const gaxiosOptions: any = {
         headers: {
           'Content-Type': 'application/json',
         },
       };
 
-      if (proxy) {
-        requestConfig.httpsAgent = new HttpsProxyAgent(proxy, agentOptions);
-      } else if (caFile) {
-        // If no proxy but a CA file is present, use a standard https.Agent
-        const https = await import('https');
-        requestConfig.httpsAgent = new https.Agent(agentOptions) as any;
+      // Add CA bundle support if available
+      if (caFile && fs.existsSync(caFile)) {
+        try {
+          const https = await import('https');
+          const caBundle = fs.readFileSync(caFile, 'utf8');
+          gaxiosOptions.agent = new https.Agent({
+            ca: caBundle,
+            rejectUnauthorized: true,
+          });
+        } catch (error) {
+          console.debug('[SSO] Could not create HTTPS agent with CA bundle:', error instanceof Error ? error.message : String(error));
+        }
       }
+
       console.log(`SSO username: ${process.env.ADA_GENAI_SSO_ID || process.env.ONE_BANK_ID || 'test'}`);
-      const response = await axios.post(
-        this.ssoUrl,
-        {
+      const gaxiosInstance = new Gaxios();
+      const response = await gaxiosInstance.request({
+        url: this.ssoUrl,
+        method: 'POST',
+        data: {
           userid:
             process.env.ADA_GENAI_SSO_ID || process.env.ONE_BANK_ID || 'test',
           password:
@@ -78,15 +83,15 @@ class SsoAuthClient {
           otp: '111111',
           otp_type: 'PUSH',
         },
-        requestConfig,
-      );
+        ...gaxiosOptions,
+      });
       await this.setTokenInCache(
         response.data.id_token,
         response.data.expires_in,
       );
       return response.data.id_token;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
+    } catch (error: unknown) {
+      if (error instanceof GaxiosError) {
         console.error('SSO authentication failed:', error.message);
         if (error.response) {
           console.error('Response data:', error.response.data);

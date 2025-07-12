@@ -107,9 +107,10 @@ function getGaxiosOptions(signal?: AbortSignal): Partial<GaxiosOptions> {
 function createFetchLikeResponse(gaxiosResponse: GaxiosResponse): Response {
   // Convert headers to a plain object for the Headers constructor
   const plainHeaders: Record<string, string> = {};
-  for (const key in gaxiosResponse.headers) {
-    if (Object.prototype.hasOwnProperty.call(gaxiosResponse.headers, key)) {
-      plainHeaders[key] = String(gaxiosResponse.headers[key]);
+  const headers = gaxiosResponse.headers as unknown as Record<string, unknown>;
+  for (const key in headers) {
+    if (Object.prototype.hasOwnProperty.call(headers, key)) {
+      plainHeaders[key] = String(headers[key]);
     }
   }
   return {

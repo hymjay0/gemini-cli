@@ -19,7 +19,7 @@ import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { getEffectiveModel } from './modelCheck.js';
 import { CustomHttpInterceptor } from './httpInterceptor.js';
-import { getSSOClient } from '../utils/ssoClient.js';
+import { ssoAuth } from '../auth/sso.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -218,17 +218,6 @@ export async function createContentGeneratorConfig(
   // Get access token for enterprise authentication
   let accessToken = process.env.GOOGLE_ACCESS_TOKEN || undefined;
   
-  // If no access token in environment, try to get one from SSO client
-  if (!accessToken) {
-    try {
-      const ssoClient = getSSOClient();
-      accessToken = await ssoClient.getAccessToken();
-      console.debug('[Enterprise Mode] Retrieved access token from SSO client');
-    } catch (error) {
-      console.debug('[Enterprise Mode] Could not get access token from SSO client:', error instanceof Error ? error.message : String(error));
-    }
-  }
-  
   // Add custom endpoint environment variables
   const customBaseURL = process.env.GOOGLE_GENAI_BASE_URL || undefined;
   const customProjectId = process.env.GOOGLE_GENAI_PROJECT_ID || googleCloudProject;
@@ -264,10 +253,23 @@ export async function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
-  if (
-    authType === AuthType.USE_VERTEX_AI &&
-    (googleApiKey || accessToken || (googleCloudProject && googleCloudLocation))
-  ) {
+  if (authType === AuthType.USE_VERTEX_AI) {
+    // For Vertex AI, prioritize SSO authentication for enterprise environments
+    // If no access token in environment, try to get one from SSO client
+    if (!accessToken) {
+      try {
+        accessToken = await ssoAuth.getToken();
+        console.debug('[Enterprise Mode] Retrieved access token from SSO client');
+      } catch (error) {
+        console.debug('[Enterprise Mode] Could not get access token from SSO client:', error instanceof Error ? error.message : String(error));
+      }
+    }
+    
+    // Check if we have any form of authentication
+    if (!googleApiKey && !accessToken && !(googleCloudProject && googleCloudLocation)) {
+      throw new Error('Vertex AI authentication requires either GOOGLE_API_KEY, GOOGLE_ACCESS_TOKEN, or SSO authentication with GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION');
+    }
+    
     contentGeneratorConfig.apiKey = googleApiKey;
     contentGeneratorConfig.accessToken = accessToken;
     contentGeneratorConfig.vertexai = true;

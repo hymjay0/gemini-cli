@@ -439,7 +439,6 @@ CgKCAQEA...
 
 ```bash
 # Standard Vertex AI configuration
-export GOOGLE_API_KEY="your-vertex-ai-api-key"
 export GOOGLE_CLOUD_PROJECT="your-project-id"
 export GOOGLE_CLOUD_LOCATION="us-central1"
 
@@ -487,6 +486,52 @@ https://your-enterprise-proxy.company.com/v1/projects/your-project-id/locations/
 https://your-enterprise-proxy.company.com/v1/projects/your-project-id/locations/us-central1/publishers/google/models/gemini-embedding-001:embedContent
 ```
 
+## Authentication in Enterprise Mode
+
+In enterprise environments using Vertex AI, the Gemini CLI uses SSO authentication to obtain Bearer tokens for API requests:
+
+1. **SSO Authentication (Default)**: The CLI automatically uses SSO authentication to obtain an access token, which is then used as a Bearer token for all API requests.
+2. **GOOGLE_ACCESS_TOKEN (Alternative)**: If set explicitly, this token is used directly as a Bearer token, bypassing SSO authentication.
+
+### Authentication Flow
+- **Default Flow**: The CLI automatically uses SSO authentication to obtain an access token, which is then used as a Bearer token for all API requests.
+- **Alternative Flow**: If `GOOGLE_ACCESS_TOKEN` is set explicitly, this token is used directly as a Bearer token, bypassing SSO authentication.
+- The SSO client uses the following environment variables:
+  - `SSO_SERVER` (required): The SSO authentication endpoint.
+  - `ADA_GENAI_SSO_ID` or `ONE_BANK_ID`: Your SSO username.
+  - `ADA_GENAI_SSO_PASSWORD` or `ONE_BANK_PASSWORD`: Your SSO password.
+  - `HTTPS_PROXY`, `REQUESTS_CA_BUNDLE`: (optional) For enterprise proxy and CA bundle support.
+- The token is cached locally and refreshed as needed.
+
+### Example Configuration
+```bash
+# Enterprise endpoint configuration
+export GOOGLE_GENAI_BASE_URL="https://your-enterprise-proxy.company.com"
+export GOOGLE_GENAI_PROJECT_ID="your-project-id"
+export GOOGLE_GENAI_LOCATION="us-central1"
+
+# SSO authentication (automatically gets access token)
+export SSO_SERVER="https://your-sso-server.company.com/auth"
+export ADA_GENAI_SSO_ID="your-sso-username"
+export ADA_GENAI_SSO_PASSWORD="your-sso-password"
+
+# Alternative: Set GOOGLE_ACCESS_TOKEN explicitly to bypass SSO
+# export GOOGLE_ACCESS_TOKEN="your-access-token"  # Get with: gcloud auth print-access-token
+
+# Optional: Enterprise proxy and CA bundle
+export HTTPS_PROXY="http://proxy.company.com:8080"
+export REQUESTS_CA_BUNDLE="/path/to/your/ca-bundle.crt"
+```
+
+### Notes
+- **Default**: SSO authentication is used automatically to obtain access tokens.
+- **Alternative**: `GOOGLE_ACCESS_TOKEN` can be set explicitly to bypass SSO authentication.
+- The CLI will print debug output indicating which authentication method is being used.
+
+---
+
+Update configuration examples throughout the document to include SSO authentication as a primary option for enterprise environments.
+
 ## Configuration Examples
 
 ### **Minimal Enterprise Setup**
@@ -496,7 +541,14 @@ https://your-enterprise-proxy.company.com/v1/projects/your-project-id/locations/
 export GOOGLE_GENAI_BASE_URL="https://your-enterprise-proxy.company.com"
 export GOOGLE_GENAI_PROJECT_ID="your-project-id"
 export GOOGLE_GENAI_LOCATION="us-central1"
-export GOOGLE_API_KEY="your-api-key"
+
+# SSO authentication (automatically gets access token)
+export SSO_SERVER="https://your-sso-server.company.com/auth"
+export ADA_GENAI_SSO_ID="your-sso-username"
+export ADA_GENAI_SSO_PASSWORD="your-sso-password"
+
+# Alternative: Set GOOGLE_ACCESS_TOKEN explicitly to bypass SSO
+# export GOOGLE_ACCESS_TOKEN="your-access-token"  # Get with: gcloud auth print-access-token
 
 # Model configuration
 export GEMINI_MODEL="gemini-2.5-pro-0506"
@@ -511,7 +563,14 @@ export GEMINI_MODEL="gemini-2.5-pro-0506"
 export GOOGLE_GENAI_BASE_URL="https://your-enterprise-proxy.company.com"
 export GOOGLE_GENAI_PROJECT_ID="your-project-id"
 export GOOGLE_GENAI_LOCATION="us-central1"
-export GOOGLE_API_KEY="your-api-key"
+
+# SSO authentication (automatically gets access token)
+export SSO_SERVER="https://your-sso-server.company.com/auth"
+export ADA_GENAI_SSO_ID="your-sso-username"
+export ADA_GENAI_SSO_PASSWORD="your-sso-password"
+
+# Alternative: Set GOOGLE_ACCESS_TOKEN explicitly to bypass SSO
+# export GOOGLE_ACCESS_TOKEN="your-access-token"  # Get with: gcloud auth print-access-token
 
 # Model configuration
 export GEMINI_MODEL="gemini-2.5-pro-0506"
@@ -530,7 +589,14 @@ export GEMINI_ENTERPRISE_EMBED_CONTENT="true"
 export GOOGLE_GENAI_BASE_URL="https://your-enterprise-proxy.company.com"
 export GOOGLE_GENAI_PROJECT_ID="your-project-id"
 export GOOGLE_GENAI_LOCATION="us-central1"
-export GOOGLE_API_KEY="your-api-key"
+
+# SSO authentication (automatically gets access token)
+export SSO_SERVER="https://your-sso-server.company.com/auth"
+export ADA_GENAI_SSO_ID="your-sso-username"
+export ADA_GENAI_SSO_PASSWORD="your-sso-password"
+
+# Alternative: Set GOOGLE_ACCESS_TOKEN explicitly to bypass SSO
+# export GOOGLE_ACCESS_TOKEN="your-access-token"  # Get with: gcloud auth print-access-token
 
 # Model configuration
 export GEMINI_MODEL="gemini-2.5-pro-0506"
@@ -635,13 +701,14 @@ The interceptor will log messages like:
 
 ## Security Considerations
 
-1. **API Key Security**: Ensure your API keys are stored securely
-2. **Network Security**: All requests go through your enterprise proxy
-3. **No External Connections**: Disable telemetry to prevent external data transmission
-4. **Audit Logging**: Your enterprise proxy can log all API requests
-5. **Model Access**: Ensure your enterprise proxy has access to the configured models
-6. **Endpoint Security**: Only enable endpoints that your enterprise environment supports
-7. **CA Bundle Security**: Use enterprise CA certificates for secure HTTPS connections
+1. **Access Token Security**: Ensure your access tokens are stored securely (if using GOOGLE_ACCESS_TOKEN)
+2. **SSO Credentials Security**: Ensure your SSO credentials are stored securely (if using SSO authentication)
+3. **Network Security**: All requests go through your enterprise proxy
+4. **No External Connections**: Disable telemetry to prevent external data transmission
+5. **Audit Logging**: Your enterprise proxy can log all API requests
+6. **Model Access**: Ensure your enterprise proxy has access to the configured models
+7. **Endpoint Security**: Only enable endpoints that your enterprise environment supports
+8. **CA Bundle Security**: Use enterprise CA certificates for secure HTTPS connections
 
 ## Troubleshooting
 
@@ -652,7 +719,8 @@ The interceptor will log messages like:
 - Confirm your model name is valid for your enterprise setup
 
 ### **Authentication Errors**
-- Verify your API key is valid
+- Verify your access token is valid (if using GOOGLE_ACCESS_TOKEN)
+- Check that your SSO server is accessible and credentials are correct (if using SSO)
 - Check that your enterprise proxy is configured to handle authentication
 - Ensure the project ID and location match your Vertex AI setup
 - Confirm your model is available in your enterprise environment

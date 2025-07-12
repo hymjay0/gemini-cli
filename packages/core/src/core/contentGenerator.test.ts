@@ -15,10 +15,10 @@ import { GoogleGenAI } from '@google/genai';
 
 vi.mock('../code_assist/codeAssist.js');
 vi.mock('@google/genai');
-vi.mock('../utils/ssoClient.js', () => ({
-  getSSOClient: vi.fn(() => ({
-    getAccessToken: vi.fn().mockRejectedValue(new Error('SSO client not available in test')),
-  })),
+vi.mock('../auth/sso.js', () => ({
+  ssoAuth: {
+    getToken: vi.fn().mockResolvedValue('mock-sso-token'),
+  },
 }));
 
 describe('createContentGenerator', () => {
@@ -114,15 +114,32 @@ describe('createContentGeneratorConfig', () => {
     expect(config.apiKey).toBeUndefined();
   });
 
-  it('should not configure for Vertex AI if required env vars are empty', async () => {
+  it('should throw error for Vertex AI if no authentication is provided', async () => {
     process.env.GOOGLE_API_KEY = '';
     process.env.GOOGLE_CLOUD_PROJECT = '';
     process.env.GOOGLE_CLOUD_LOCATION = '';
+    // Mock SSO to reject for this test
+    const { ssoAuth } = await import('../auth/sso.js');
+    ssoAuth.getToken = vi.fn().mockRejectedValue(new Error('SSO client not available in test'));
+    await expect(
+      createContentGeneratorConfig(undefined, AuthType.USE_VERTEX_AI)
+    ).rejects.toThrow('Vertex AI authentication requires either GOOGLE_API_KEY, GOOGLE_ACCESS_TOKEN, or SSO authentication with GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION');
+  });
+
+  it('should use SSO authentication for Vertex AI when no access token is provided', async () => {
+    process.env.GOOGLE_API_KEY = '';
+    process.env.GOOGLE_ACCESS_TOKEN = '';
+    process.env.GOOGLE_CLOUD_PROJECT = 'env-gcp-project';
+    process.env.GOOGLE_CLOUD_LOCATION = 'env-gcp-location';
+    // Mock SSO to resolve for this test
+    const { ssoAuth } = await import('../auth/sso.js');
+    ssoAuth.getToken = vi.fn().mockResolvedValue('mock-sso-token');
     const config = await createContentGeneratorConfig(
       undefined,
       AuthType.USE_VERTEX_AI,
     );
+    expect(config.vertexai).toBe(true);
+    expect(config.accessToken).toBe('mock-sso-token');
     expect(config.apiKey).toBeUndefined();
-    expect(config.vertexai).toBeUndefined();
   });
 });
