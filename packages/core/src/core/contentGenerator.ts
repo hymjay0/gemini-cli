@@ -211,7 +211,7 @@ class EnterpriseContentGenerator implements ContentGenerator {
 }
 
 export async function createContentGeneratorConfig(
-  model: string | undefined,
+  config: Config,
   authType: AuthType | undefined,
 ): Promise<ContentGeneratorConfig> {
   const geminiApiKey = process.env.GEMINI_API_KEY || undefined;
@@ -231,7 +231,7 @@ export async function createContentGeneratorConfig(
   const isEnterpriseMode = !!(customBaseURL);
 
   // Use runtime model from config if available, otherwise fallback to parameter or default
-  const effectiveModel = model || DEFAULT_GEMINI_MODEL;
+  const effectiveModel = config.getModel() || DEFAULT_GEMINI_MODEL;
 
   const contentGeneratorConfig: ContentGeneratorConfig = {
     model: effectiveModel,
@@ -249,10 +249,14 @@ export async function createContentGeneratorConfig(
   if (authType === AuthType.USE_GEMINI && geminiApiKey) {
     contentGeneratorConfig.apiKey = geminiApiKey;
     contentGeneratorConfig.vertexai = false;
-    contentGeneratorConfig.model = await getEffectiveModel(
+    getEffectiveModel(
       contentGeneratorConfig.apiKey,
       contentGeneratorConfig.model,
-    );
+    ).then((newModel) => {
+      if (newModel !== contentGeneratorConfig.model) {
+        config.flashFallbackHandler?.(contentGeneratorConfig.model, newModel);
+      }
+    });
 
     return contentGeneratorConfig;
   }

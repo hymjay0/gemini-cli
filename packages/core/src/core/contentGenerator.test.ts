@@ -69,12 +69,18 @@ describe('createContentGenerator', () => {
 
 describe('createContentGeneratorConfig', () => {
   const originalEnv = process.env;
+  const mockConfig = {
+    getModel: vi.fn().mockReturnValue('gemini-pro'),
+    setModel: vi.fn(),
+    flashFallbackHandler: vi.fn(),
+  } as unknown as Config;
 
   beforeEach(() => {
     // Reset modules to re-evaluate imports and environment variables
     vi.resetModules();
     // Restore process.env before each test
     process.env = { ...originalEnv };
+    vi.clearAllMocks();
   });
 
   afterAll(() => {
@@ -85,7 +91,7 @@ describe('createContentGeneratorConfig', () => {
   it('should configure for Gemini using GEMINI_API_KEY when set', async () => {
     process.env.GEMINI_API_KEY = 'env-gemini-key';
     const config = await createContentGeneratorConfig(
-      undefined,
+      mockConfig,
       AuthType.USE_GEMINI,
     );
     expect(config.apiKey).toBe('env-gemini-key');
@@ -95,7 +101,7 @@ describe('createContentGeneratorConfig', () => {
   it('should not configure for Gemini if GEMINI_API_KEY is empty', async () => {
     process.env.GEMINI_API_KEY = '';
     const config = await createContentGeneratorConfig(
-      undefined,
+      mockConfig,
       AuthType.USE_GEMINI,
     );
     expect(config.apiKey).toBeUndefined();
@@ -105,7 +111,7 @@ describe('createContentGeneratorConfig', () => {
   it('should configure for Vertex AI using GOOGLE_API_KEY when set', async () => {
     process.env.GOOGLE_API_KEY = 'env-google-key';
     const config = await createContentGeneratorConfig(
-      undefined,
+      mockConfig,
       AuthType.USE_VERTEX_AI,
     );
     expect(config.apiKey).toBe('env-google-key');
@@ -116,7 +122,7 @@ describe('createContentGeneratorConfig', () => {
     process.env.GOOGLE_CLOUD_PROJECT = 'env-gcp-project';
     process.env.GOOGLE_CLOUD_LOCATION = 'env-gcp-location';
     const config = await createContentGeneratorConfig(
-      undefined,
+      mockConfig,
       AuthType.USE_VERTEX_AI,
     );
     expect(config.vertexai).toBe(true);
@@ -130,8 +136,13 @@ describe('createContentGeneratorConfig', () => {
     // Mock SSO to reject for this test
     const { ssoAuth } = await import('../auth/sso.js');
     ssoAuth.getToken = vi.fn().mockRejectedValue(new Error('SSO client not available in test'));
+    const mockConfig = {
+      getModel: vi.fn().mockReturnValue('gemini-pro'),
+      setModel: vi.fn(),
+      flashFallbackHandler: vi.fn(),
+    } as unknown as Config;
     await expect(
-      createContentGeneratorConfig(undefined, AuthType.USE_VERTEX_AI)
+      createContentGeneratorConfig(mockConfig, AuthType.USE_VERTEX_AI)
     ).rejects.toThrow('Vertex AI authentication requires either GOOGLE_API_KEY, GOOGLE_ACCESS_TOKEN, or SSO authentication with GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION');
   });
 
@@ -144,7 +155,7 @@ describe('createContentGeneratorConfig', () => {
     const { ssoAuth } = await import('../auth/sso.js');
     ssoAuth.getToken = vi.fn().mockResolvedValue('mock-sso-token');
     const config = await createContentGeneratorConfig(
-      undefined,
+      mockConfig,
       AuthType.USE_VERTEX_AI,
     );
     expect(config.vertexai).toBe(true);
