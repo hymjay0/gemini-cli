@@ -19,9 +19,9 @@ import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { Config } from '../config/config.js';
 import { getEffectiveModel } from './modelCheck.js';
-import { CustomHttpInterceptor } from './httpInterceptor.js';
 import { ssoAuth } from '../auth/sso.js';
 import { UserTierId } from '../code_assist/types.js';
+import { LlmHttpClient } from '../llm-client/index.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -224,11 +224,11 @@ export async function createContentGeneratorConfig(
   
   // Add custom endpoint environment variables
   const customBaseURL = process.env.GOOGLE_GENAI_BASE_URL || undefined;
-  const customProjectId = process.env.GOOGLE_GENAI_PROJECT_ID || googleCloudProject;
-  const customLocation = process.env.GOOGLE_GENAI_LOCATION || googleCloudLocation;
+  const customProjectId = googleCloudProject;
+  const customLocation = googleCloudLocation;
 
   // Check if we're in enterprise mode (custom endpoint configured)
-  const isEnterpriseMode = !!(customBaseURL && customProjectId && customLocation);
+  const isEnterpriseMode = !!(customBaseURL);
 
   // Use runtime model from config if available, otherwise fallback to parameter or default
   const effectiveModel = model || DEFAULT_GEMINI_MODEL;
@@ -330,41 +330,45 @@ export async function createContentGenerator(
     );
   }
 
+  // ENTERPRISE MODE: Use LlmHttpClient if customBaseURL is set
+  if (
+    (config.authType === AuthType.USE_GEMINI || config.authType === AuthType.USE_VERTEX_AI) &&
+    config.customBaseURL && config.customProjectId && config.customLocation
+  ) {
+    // Instantiate LlmHttpClient
+    const llmClient = new LlmHttpClient({
+      baseUrl: config.customBaseURL,
+      project: config.customProjectId,
+      location: config.customLocation,
+      model: config.model,
+      accessToken: config.accessToken,
+      proxy: process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
+      caBundlePath: process.env.REQUESTS_CA_BUNDLE,
+      timeoutMs: 30000,
+      maxAttempts: 3,
+      logging: process.env.DEBUG === 'true',
+    });
+    // Wrap with EnterpriseContentGenerator for env var gating/fallbacks
+    if (config.enterpriseEndpoints) {
+      return new EnterpriseContentGenerator(llmClient, config.enterpriseEndpoints);
+    }
+    return llmClient;
+  }
+
+  // NON-ENTERPRISE: Use the standard GoogleGenAI (SDK)
   if (
     config.authType === AuthType.USE_GEMINI ||
     config.authType === AuthType.USE_VERTEX_AI
   ) {
-    // Check if custom endpoint is configured
-    if (config.customBaseURL && config.customProjectId && config.customLocation) {
-      console.log(`[Custom Endpoint] Using custom endpoint: ${config.customBaseURL}`);
-      
-      // Create and activate the HTTP interceptor
-      const interceptor = new CustomHttpInterceptor({
-        baseURL: config.customBaseURL,
-        projectId: config.customProjectId,
-        location: config.customLocation,
-        apiKey: config.apiKey,
-        accessToken: config.accessToken,
-      });
-      
-      // Activate the interceptor
-      interceptor.intercept();
-    }
-
-    // Use the standard GoogleGenAI (requests will be intercepted if interceptor is active)
     const googleGenAI = new GoogleGenAI({
       apiKey: config.apiKey === '' ? undefined : config.apiKey,
       vertexai: config.vertexai,
       httpOptions,
     });
-
     const baseGenerator = googleGenAI.models;
-    
-    // Wrap with enterprise-aware generator if enterprise endpoints are configured
     if (config.enterpriseEndpoints) {
       return new EnterpriseContentGenerator(baseGenerator, config.enterpriseEndpoints);
     }
-
     return baseGenerator;
   }
 
@@ -372,3 +376,5 @@ export async function createContentGenerator(
     `Error creating contentGenerator: Unsupported authType: ${config.authType}`,
   );
 }
+
+export type { GenerateContentParameters, GenerateContentResponse, CountTokensParameters, CountTokensResponse, EmbedContentParameters, EmbedContentResponse };

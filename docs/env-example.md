@@ -10,8 +10,8 @@ Create a `.env` file in your `.gemini` directory (e.g., `~/.gemini/.env`) with y
 # Copy this template to ~/.gemini/.env and modify as needed
 # Enterprise endpoint configuration
 GOOGLE_GENAI_BASE_URL=https://your-enterprise-proxy.company.com
-GOOGLE_GENAI_PROJECT_ID=your-enterprise-project-id
-GOOGLE_GENAI_LOCATION=us-central1
+GOOGLE_CLOUD_PROJECT=your-enterprise-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
 
 # SSO authentication (automatically gets access token)
 SSO_SERVER=https://your-sso-server.company.com/auth
@@ -44,8 +44,8 @@ GEMINI_MODEL=gemini-2.5-pro-0506
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `GOOGLE_GENAI_BASE_URL` | Custom base URL for enterprise endpoints | `https://generativelanguage.googleapis.com` | `https://your-enterprise-proxy.company.com` |
-| `GOOGLE_GENAI_PROJECT_ID` | Custom project ID for enterprise endpoints | `GOOGLE_CLOUD_PROJECT` | `your-enterprise-project-id` |
-| `GOOGLE_GENAI_LOCATION` | Custom location for enterprise endpoints | `GOOGLE_CLOUD_LOCATION` | `us-central1` |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID for enterprise endpoints |  | `your-enterprise-project-id` |
+| `GOOGLE_CLOUD_LOCATION` | Google Cloud location for enterprise endpoints |  | `us-central1` |
 
 ### SSO Client Integration
 
@@ -83,30 +83,6 @@ export REQUESTS_CA_BUNDLE=/path/to/your/ca-bundle.crt
 // The CLI automatically calls this when using Vertex AI without an access token
 const accessToken = await ssoAuth.getToken();
 ```
-
-### HTTP Interceptor
-
-The Gemini CLI includes an HTTP interceptor that automatically redirects Google Generative AI API requests to your enterprise endpoints. When configured, it transforms URLs from the standard Google API format to your enterprise Vertex AI format.
-
-**URL Transformation Examples:**
-
-**With Bearer Token (from SSO):**
-- **Original:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`
-- **Transformed:** `https://your-enterprise-proxy.company.com/v1/projects/your-project-id/locations/us-central1/publishers/google/models/gemini-2.5-pro:generateContent`
-- **Authorization Header:** `Bearer <token-from-sso>`
-
-**With Bearer Token (explicit):**
-- **Original:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`
-- **Transformed:** `https://your-enterprise-proxy.company.com/v1/projects/your-project-id/locations/us-central1/publishers/google/models/gemini-2.5-pro:generateContent`
-- **Authorization Header:** `Bearer <your-access-token>`
-
-The interceptor automatically:
-- Detects Google Generative AI API requests
-- Transforms the URL to use your enterprise endpoint
-- Adds your project ID and location
-- Adds authentication via Bearer token (Authorization header)
-- Maintains the original request method, headers, and body
-- Supports CA bundle configuration for enterprise certificates
 
 ### Enterprise Endpoint Availability
 
@@ -182,8 +158,8 @@ GEMINI_MODEL=gemini-2.5-pro
 # ~/.gemini/.env
 # Enterprise endpoint configuration
 GOOGLE_GENAI_BASE_URL=https://your-enterprise-proxy.company.com
-GOOGLE_GENAI_PROJECT_ID=your-enterprise-project-id
-GOOGLE_GENAI_LOCATION=us-central1
+GOOGLE_CLOUD_PROJECT=your-enterprise-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
 
 # SSO authentication (automatically gets access token)
 SSO_SERVER=https://your-sso-server.company.com/auth
@@ -203,74 +179,6 @@ REQUESTS_CA_BUNDLE=/path/to/your/ca-bundle.crt
 # Proxy configuration (if needed)
 HTTP_PROXY=http://proxy.company.com:8080
 HTTPS_PROXY=http://proxy.company.com:8080
-```
-
-### HTTP Interceptor Configuration
-
-**With SSO Authentication (Default):**
-```bash
-# ~/.gemini/.env
-# HTTP Interceptor with SSO authentication for enterprise environments
-
-# Enterprise endpoint configuration
-GOOGLE_GENAI_BASE_URL=https://your-enterprise-proxy.company.com
-GOOGLE_GENAI_PROJECT_ID=your-enterprise-project-id
-GOOGLE_GENAI_LOCATION=us-central1
-
-# SSO authentication (automatically gets access token)
-SSO_SERVER=https://your-sso-server.company.com/auth
-ADA_GENAI_SSO_ID=your-sso-username
-ADA_GENAI_SSO_PASSWORD=your-sso-password
-
-# The CLI will automatically:
-# 1. Use SSO authentication to get access token via ssoAuth.getToken()
-# 2. Transform URLs to use your enterprise endpoint
-# 3. Add Authorization: Bearer <token> header
-
-# CA bundle for enterprise HTTPS connections
-REQUESTS_CA_BUNDLE=/path/to/your/ca-bundle.crt
-
-# Enterprise endpoint availability (disable unavailable endpoints)
-GEMINI_ENTERPRISE_GENERATE_CONTENT=true
-GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM=false
-GEMINI_ENTERPRISE_COUNT_TOKENS=false
-GEMINI_ENTERPRISE_EMBED_CONTENT=true
-```
-
-**With Bearer Token Authentication (Alternative):**
-```bash
-# ~/.gemini/.env
-# HTTP Interceptor with explicit Bearer token authentication
-
-# Enterprise endpoint configuration
-GOOGLE_GENAI_BASE_URL=https://your-enterprise-proxy.company.com
-GOOGLE_GENAI_PROJECT_ID=your-enterprise-project-id
-GOOGLE_GENAI_LOCATION=us-central1
-GOOGLE_ACCESS_TOKEN=your-access-token  # Get with: gcloud auth print-access-token
-
-# The interceptor will automatically transform URLs like:
-# https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent
-# to:
-# https://your-enterprise-proxy.company.com/v1/projects/your-enterprise-project-id/locations/us-central1/publishers/google/models/gemini-2.5-pro:generateContent
-# with Authorization: Bearer <your-access-token> header
-
-# CA bundle for enterprise HTTPS connections
-REQUESTS_CA_BUNDLE=/path/to/your/ca-bundle.crt
-
-# Enterprise endpoint availability (disable unavailable endpoints)
-GEMINI_ENTERPRISE_GENERATE_CONTENT=true
-GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM=false
-GEMINI_ENTERPRISE_COUNT_TOKENS=false
-GEMINI_ENTERPRISE_EMBED_CONTENT=true
-```
-
-### Development Configuration
-```bash
-# ~/.gemini/.env
-GEMINI_API_KEY=your-gemini-api-key-here
-DEBUG=true
-DEBUG_PORT=9229
-GEMINI_CLI_TELEMETRY_DISABLED=true
 ```
 
 ## File Locations

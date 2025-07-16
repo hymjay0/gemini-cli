@@ -7,8 +7,8 @@
 
 // Set up environment variables for testing
 process.env.GOOGLE_GENAI_BASE_URL = 'https://your-enterprise-proxy.company.com';
-process.env.GOOGLE_GENAI_PROJECT_ID = 'your-project-id';
-process.env.GOOGLE_GENAI_LOCATION = 'us-central1';
+process.env.GOOGLE_CLOUD_PROJECT = 'your-project-id';
+process.env.GOOGLE_CLOUD_LOCATION = 'us-central1';
 process.env.GOOGLE_API_KEY = 'your-api-key';
 // Uncomment for Bearer token authentication:
 // process.env.GOOGLE_ACCESS_TOKEN = 'ya29.a0...';  // Get with: gcloud auth print-access-token
@@ -28,8 +28,8 @@ import { CustomHttpInterceptor } from './packages/core/dist/src/core/httpInterce
 // Create and activate interceptor
 const interceptor = new CustomHttpInterceptor({
   baseURL: process.env.GOOGLE_GENAI_BASE_URL,
-  projectId: process.env.GOOGLE_GENAI_PROJECT_ID,
-  location: process.env.GOOGLE_GENAI_LOCATION,
+  projectId: process.env.GOOGLE_CLOUD_PROJECT,
+  location: process.env.GOOGLE_CLOUD_LOCATION,
   apiKey: process.env.GOOGLE_API_KEY,
   accessToken: process.env.GOOGLE_ACCESS_TOKEN,
 });
