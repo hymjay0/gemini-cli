@@ -270,8 +270,12 @@ export async function createContentGeneratorConfig(
     }
     
     // Check if we have any form of authentication
-    if (!googleApiKey && !accessToken && !(googleCloudProject && googleCloudLocation)) {
-      throw new Error('Vertex AI authentication requires either GOOGLE_API_KEY, GOOGLE_ACCESS_TOKEN, or SSO authentication with GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION');
+    // For enterprise mode with custom endpoints, we accept SSO or access token authentication
+    const hasStandardAuth = googleApiKey || accessToken || (googleCloudProject && googleCloudLocation);
+    const hasEnterpriseAuth = isEnterpriseMode && (accessToken || (customProjectId && customLocation));
+    
+    if (!hasStandardAuth && !hasEnterpriseAuth) {
+      throw new Error('Vertex AI authentication requires either GOOGLE_API_KEY, GOOGLE_ACCESS_TOKEN, or SSO authentication with GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION. For enterprise mode with custom endpoints, SSO or access token authentication is also supported.');
     }
     
     contentGeneratorConfig.apiKey = googleApiKey;
@@ -294,11 +298,7 @@ export async function createContentGeneratorConfig(
       
       contentGeneratorConfig.enterpriseEndpoints = enterpriseEndpoints;
       
-      console.log('[Enterprise Mode] Using enterprise endpoint configuration:');
-      console.log(`  - generateContent: ${enterpriseEndpoints.generateContent}`);
-      console.log(`  - generateContentStream: ${enterpriseEndpoints.generateContentStream}`);
-      console.log(`  - countTokens: ${enterpriseEndpoints.countTokens}`);
-      console.log(`  - embedContent: ${enterpriseEndpoints.embedContent}`);
+      console.log('[Enterprise Mode] Using custom endpoint with enterprise configuration');
     }
 
     return contentGeneratorConfig;
@@ -351,10 +351,14 @@ export async function createContentGenerator(
       interceptor.intercept();
     }
 
+    // For enterprise mode with custom endpoint and access token, don't set vertexai: true
+    // as this causes the Google SDK to try to use ADC instead of the access token
+    const shouldUseVertexAI = config.vertexai && !(config.customBaseURL && config.accessToken);
+
     // Use the standard GoogleGenAI (requests will be intercepted if interceptor is active)
     const googleGenAI = new GoogleGenAI({
       apiKey: config.apiKey === '' ? undefined : config.apiKey,
-      vertexai: config.vertexai,
+      vertexai: shouldUseVertexAI,
       httpOptions,
     });
 

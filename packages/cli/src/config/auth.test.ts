@@ -57,12 +57,51 @@ describe('validateAuthMethod', () => {
       expect(validateAuthMethod(AuthType.USE_VERTEX_AI)).toBeNull();
     });
 
+    it('should return null if enterprise mode is configured with SSO', () => {
+      process.env.GOOGLE_GENAI_BASE_URL = 'https://enterprise.company.com';
+      process.env.GOOGLE_GENAI_PROJECT_ID = 'test-project';
+      process.env.GOOGLE_GENAI_LOCATION = 'us-central1';
+      process.env.SSO_SERVER = 'https://sso.company.com/auth';
+      process.env.ADA_GENAI_SSO_ID = 'test-user';
+      process.env.ADA_GENAI_SSO_PASSWORD = 'test-password';
+      expect(validateAuthMethod(AuthType.USE_VERTEX_AI)).toBeNull();
+    });
+
+    it('should return null if enterprise mode is configured with access token', () => {
+      process.env.GOOGLE_GENAI_BASE_URL = 'https://enterprise.company.com';
+      process.env.GOOGLE_GENAI_PROJECT_ID = 'test-project';
+      process.env.GOOGLE_GENAI_LOCATION = 'us-central1';
+      process.env.GOOGLE_ACCESS_TOKEN = 'test-token';
+      expect(validateAuthMethod(AuthType.USE_VERTEX_AI)).toBeNull();
+    });
+
+    it('should return null if enterprise mode is configured with API key', () => {
+      process.env.GOOGLE_GENAI_BASE_URL = 'https://enterprise.company.com';
+      process.env.GOOGLE_GENAI_PROJECT_ID = 'test-project';
+      process.env.GOOGLE_GENAI_LOCATION = 'us-central1';
+      process.env.GOOGLE_API_KEY = 'test-api-key';
+      expect(validateAuthMethod(AuthType.USE_VERTEX_AI)).toBeNull();
+    });
+
+    it('should return an error message if enterprise mode is configured but no authentication is provided', () => {
+      process.env.GOOGLE_GENAI_BASE_URL = 'https://enterprise.company.com';
+      process.env.GOOGLE_GENAI_PROJECT_ID = 'test-project';
+      process.env.GOOGLE_GENAI_LOCATION = 'us-central1';
+      expect(validateAuthMethod(AuthType.USE_VERTEX_AI)).toBe(
+        'When using Vertex AI in enterprise mode, you must specify either:\n' +
+        '• SSO authentication (SSO_SERVER, ADA_GENAI_SSO_ID, ADA_GENAI_SSO_PASSWORD)\n' +
+        '• GOOGLE_ACCESS_TOKEN environment variable\n' +
+        '• GOOGLE_API_KEY environment variable\n' +
+        'Update your environment and try again (no reload needed if using .env)!'
+      );
+    });
+
     it('should return an error message if no required environment variables are set', () => {
       expect(validateAuthMethod(AuthType.USE_VERTEX_AI)).toBe(
         'When using Vertex AI, you must specify either:\n' +
           '• GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION environment variables.\n' +
           '• GOOGLE_API_KEY environment variable (if using express mode).\n' +
-          'Update your environment and try again (no reload needed if using .env)!',
+          'Update your environment and try again (no reload needed if using .env)!'
       );
     });
   });

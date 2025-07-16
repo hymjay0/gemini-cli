@@ -65,6 +65,37 @@ describe('createContentGenerator', () => {
     });
     expect(generator).toBe((mockGenerator as GoogleGenAI).models);
   });
+
+  it('should create a GoogleGenAI content generator for enterprise mode with custom endpoint and access token', async () => {
+    const mockGenerator = {
+      models: {},
+    } as unknown;
+    vi.mocked(GoogleGenAI).mockImplementation(() => mockGenerator as never);
+    const generator = await createContentGenerator(
+      {
+        model: 'test-model',
+        authType: AuthType.USE_VERTEX_AI,
+        vertexai: true,
+        customBaseURL: 'https://enterprise.company.com',
+        customProjectId: 'test-project',
+        customLocation: 'us-central1',
+        accessToken: 'test-access-token',
+      },
+      mockConfig,
+    );
+    // In enterprise mode with custom endpoint and access token, vertexai should be false
+    // to prevent the Google SDK from trying to use ADC
+    expect(GoogleGenAI).toHaveBeenCalledWith({
+      apiKey: undefined,
+      vertexai: false,
+      httpOptions: {
+        headers: {
+          'User-Agent': expect.any(String),
+        },
+      },
+    });
+    expect(generator).toBe((mockGenerator as GoogleGenAI).models);
+  });
 });
 
 describe('createContentGeneratorConfig', () => {

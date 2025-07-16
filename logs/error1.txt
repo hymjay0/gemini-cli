@@ -1,4 +1,4 @@
-It seems the Enterprise Mode does not for in Vertex AI method. Or what goes wrong? 
+It seems the Enterprise Mode does not work for in Vertex AI method. Or what goes wrong? 
 
 
 │ Debug Console (ctrl+o to close)                                                                                                                              │
