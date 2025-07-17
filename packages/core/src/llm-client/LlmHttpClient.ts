@@ -2,7 +2,16 @@ import { Gaxios, GaxiosOptions, GaxiosResponse } from 'gaxios';
 import * as fs from 'fs';
 import * as https from 'https';
 import { ssoAuth } from '../auth/sso.js';
-import type { ContentGenerator, GenerateContentParameters, GenerateContentResponse as CoreGenerateContentResponse, CountTokensParameters, CountTokensResponse as CoreCountTokensResponse, EmbedContentParameters, EmbedContentResponse as CoreEmbedContentResponse } from '../core/contentGenerator.js';
+import {
+  ContentGenerator,
+  GenerateContentParameters,
+  GenerateContentResponse as CoreGenerateContentResponse,
+  CountTokensParameters,
+  CountTokensResponse as CoreCountTokensResponse,
+  EmbedContentParameters,
+  EmbedContentResponse as CoreEmbedContentResponse,
+  GenerateContentResponse,
+} from '../core/contentGenerator.js';
 
 export interface LlmHttpClientConfig {
   baseUrl: string;
@@ -23,18 +32,10 @@ export interface GenerateContentRequest {
   signal?: AbortSignal;
 }
 
-export interface GenerateContentResponse {
-  [key: string]: any;
-}
-
 export interface EmbedContentRequest {
   content: any;
   [key: string]: any;
   signal?: AbortSignal;
-}
-
-export interface EmbedContentResponse {
-  [key: string]: any;
 }
 
 export interface CountTokensRequest {
@@ -208,21 +209,50 @@ export class LlmHttpClient implements ContentGenerator {
 
   async generateContent(request: GenerateContentParameters): Promise<CoreGenerateContentResponse> {
     const url = this.buildUrl('generateContent');
-    // Remove destructuring of signal
     const headers = {
       ...(await this.getAuthHeaders()),
       'Content-Type': 'application/json',
     };
+
+    const { contents, config } = request;
+    const {
+      systemInstruction,
+      safetySettings,
+      tools,
+      toolConfig,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      abortSignal,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      httpOptions,
+      ...generationConfig
+    } = config || {};
+
+    const data: any = {
+      contents,
+      ...(systemInstruction && {
+        systemInstruction: {
+          role: 'system',
+          parts: [{ text: systemInstruction }],
+        },
+      }),
+      ...(safetySettings && { safetySettings }),
+      ...(tools && { tools }),
+      ...(toolConfig && { toolConfig }),
+      ...(Object.keys(generationConfig).length > 0 && { generationConfig }),
+    };
+
     const options: GaxiosOptions = {
       url,
       method: 'POST',
       headers,
-      data: request,
+      data,
       timeout: this.getTimeoutMs(),
       agent: this.getHttpsAgent(),
     };
     const response: GaxiosResponse = await this.requestWithHandling(options);
-    return response.data as CoreGenerateContentResponse;
+    const result = new GenerateContentResponse();
+    Object.assign(result, response.data);
+    return result;
   }
 
   async embedContent(request: EmbedContentParameters): Promise<CoreEmbedContentResponse> {
@@ -295,46 +325,114 @@ export class LlmHttpClient implements ContentGenerator {
   }
 
   async generateContentStream(request: GenerateContentParameters): Promise<AsyncGenerator<CoreGenerateContentResponse>> {
-    const url = this.buildUrl('generateContentStream');
+    const url = this.buildUrl('streamGenerateContent');
     const headers = {
       ...(await this.getAuthHeaders()),
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+
+    const { contents, config } = request;
+    const {
+      systemInstruction,
+      safetySettings,
+      tools,
+      toolConfig,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      abortSignal,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      httpOptions,
+      ...generationConfig
+    } = config || {};
+
+    const data: any = {
+      contents,
+      ...(systemInstruction && {
+        systemInstruction: {
+          role: 'system',
+          parts: [{ text: systemInstruction }],
+        },
+      }),
+      ...(safetySettings && { safetySettings }),
+      ...(tools && { tools }),
+      ...(toolConfig && { toolConfig }),
+      ...(Object.keys(generationConfig).length > 0 && { generationConfig }),
+    };
+
     const options: GaxiosOptions = {
       url,
       method: 'POST',
       headers,
-      data: request,
+      data,
       timeout: this.getTimeoutMs(),
       agent: this.getHttpsAgent(),
-      responseType: 'stream',
     };
+
+    // // BEGIN: Backup implementation for true streaming
+    // // If the Stork endpoint is updated to support true streaming in the future,
+    // // comment out the "fake stream" implementation below and uncomment this block.
+    //
+    // const streamOptions: GaxiosOptions = {
+    //   ...options,
+    //   responseType: 'stream',
+    // };
+    // const self = this;
+    // async function* streamGenerator() {
+    //   try {
+    //     const response: GaxiosResponse = await self.requestWithHandling(streamOptions);
+    //     if (response.data && typeof response.data.on === 'function') {
+    //       const stream = response.data;
+    //       let buffer = '';
+    //       for await (const chunk of stream) {
+    //         buffer += chunk.toString();
+    //         let boundary = buffer.indexOf('\n');
+    //         while (boundary !== -1) {
+    //           const jsonStr = buffer.slice(0, boundary).trim();
+    //           buffer = buffer.slice(boundary + 1);
+    //           if (jsonStr) {
+    //             try {
+    //               const result = new GenerateContentResponse();
+    //               Object.assign(result, JSON.parse(jsonStr));
+    //               yield result;
+    //             } catch (e) {
+    //               // Ignore parse errors for incomplete chunks
+    //             }
+    //           }
+    //           boundary = buffer.indexOf('\n');
+    //         }
+    //       }
+    //     }
+    //   } catch (err: any) {
+    //      if (err.message && err.message.includes('404')) {
+    //        const single = await self.generateContent(request);
+    //        yield single;
+    //        return;
+    //      }
+    //      throw err;
+    //   }
+    // }
+    // return Promise.resolve(streamGenerator());
+    //
+    // // END: Backup implementation for true streaming
+
+
+    // BEGIN: Current "fake stream" implementation for Stork endpoint
     const self = this;
     async function* generator() {
       try {
         const response: GaxiosResponse = await self.requestWithHandling(options);
-        if (response.data && typeof response.data.on === 'function') {
-          const stream = response.data;
-          let buffer = '';
-          for await (const chunk of stream) {
-            buffer += chunk.toString();
-            let boundary = buffer.indexOf('\n');
-            while (boundary !== -1) {
-              const jsonStr = buffer.slice(0, boundary).trim();
-              buffer = buffer.slice(boundary + 1);
-              if (jsonStr) {
-                try {
-                  yield JSON.parse(jsonStr) as CoreGenerateContentResponse;
-                } catch (e) {
-                  // Ignore parse errors for incomplete chunks
-                }
-              }
-              boundary = buffer.indexOf('\n');
-            }
+        const responseData = response.data;
+
+        if (Array.isArray(responseData)) {
+          for (const item of responseData) {
+            const result = new GenerateContentResponse();
+            Object.assign(result, item);
+            yield result;
           }
-        } else {
-          yield response.data as CoreGenerateContentResponse;
+        } else if (responseData) {
+          const result = new GenerateContentResponse();
+          Object.assign(result, responseData);
+          yield result;
         }
       } catch (err: any) {
         if (err.message && err.message.includes('404')) {
@@ -346,9 +444,10 @@ export class LlmHttpClient implements ContentGenerator {
       }
     }
     return Promise.resolve(generator());
+    // END: Current "fake stream" implementation
   }
 
   async getTier(): Promise<undefined> {
     return undefined;
   }
-} 
+}
