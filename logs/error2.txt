@@ -1,0 +1,118 @@
+✕ [API Error: [LlmHttpClient] Request failed: HTTP 400  at
+  https://stork.enterprise.com/v1/projects/dbs-mod-adag-d4q9v/locations/us-central1/publishers/google/models/gemini-2.5-pro:streamGenerateContent
+  Response: [{"error":{"code":400,"message":"Invalid JSON payload received. Unknown name \"id\" at 'contents[4].parts[0].function_response': Cannot find
+  field.","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[4].parts[0].function_response","
+  description":"Invalid JSON payload received. Unknown name \"id\" at 'contents[4].parts[0].function_response': Cannot find field."}]}]}}]]
+
+ ╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮                         
+ │ ✔  ReadFile README.md                                                                                                                                           │                         
+ │                                                                                                                                                                 │                         
+ │    (truncated)                                                                                                                                                  │                         
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯                         
+✕ [API Error: [LlmHttpClient] Request failed: HTTP 400  at
+  https://stork.enterprise.com/v1/projects/dbs-mod-adag-d4q9v/locations/us-central1/publishers/google/models/gemini-2.5-pro:streamGenerateContent
+  Response: [{"error":{"code":400,"message":"Invalid JSON payload received. Unknown name \"id\" at 'contents[6].parts[0].function_response': Cannot find
+  field.","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[6].parts[0].function_response","
+  description":"Invalid JSON payload received. Unknown name \"id\" at 'contents[6].parts[0].function_response': Cannot find field."}]}]}}]]
+
+ ╭────────────────────────╮
+ │ ✔  ReadFile GEMINI.md  │
+ ╰────────────────────────╯
+✕ [API Error: [LlmHttpClient] Request failed: HTTP 400  at
+  https://stork.enterprise.com/v1/projects/dbs-mod-adag-d4q9v/locations/us-central1/publishers/google/models/gemini-2.5-pro:streamGenerateContent
+  Response: [{"error":{"code":400,"message":"Invalid JSON payload received. Unknown name \"id\" at 'contents[8].parts[0].function_response': Cannot find
+  field.","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[8].parts[0].function_response","
+  description":"Invalid JSON payload received. Unknown name \"id\" at 'contents[8].parts[0].function_response': Cannot find field."}]}]}}]]
+
+✦ This project is for the Gemini CLI, a command-line interface that brings Google's Gemini models to your local development environment. It's an experimental tool designed
+  to help with coding tasks.
+
+  Key features include:
+   * Interactive Chat: Chat with Gemini in your terminal.
+   * Code Understanding & Generation: Understands your code and can generate new code for you.
+   * Action Execution: Can run shell commands and perform file system operations.
+   * VS Code Integration: Has a companion VS Code extension.
+   * Enterprise Ready: Supports features like proxies and telemetry.
+
+  It works by using a local server to communicate with the Gemini API, allowing the model to invoke tools to perform actions on your behalf.
+
+╭───────────╮
+│  > /quit  │
+╰───────────╯
+
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                                                                           │
+│  Agent powering down. Goodbye!                                                                                                                                                            │
+│                                                                                                                                                                                           │
+│  Interaction Summary                                                                                                                                                                      │
+│  Tool Calls:                 3 ( ✔ 3 ✖ 0 )                                                                                                                                                │
+│  Success Rate:               100.0%                                                                                                                                                       │
+│                                                                                                                                                                                           │
+│  Performance                                                                                                                                                                              │
+│  Wall Time:                  2m 35s                                                                                                                                                       │
+│  Agent Active:               25.7s                                                                                                                                                        │
+│    » API Time:               25.6s (99.7%)                                                                                                                                                │
+│    » Tool Time:              69ms (0.3%)                                                                                                                                                  │
+│                                                                                                                                                                                           │
+│                                                                                                                                                                                           │
+│  Model Usage                  Reqs   Input Tokens  Output Tokens                                                                                                                          │
+│  ───────────────────────────────────────────────────────────────                                                                                                                          │
+│  gemini-2.5-pro                  7         51,751            260                                                                                                                          │
+│                                                                                                                                                                                           │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+C:\Users\jayho\OneDrive - DBS Bank Ltd\Repos\gemini-cli-http-llm>node bundle/gemini.js
+(node:23072) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Data collection is disabled.
+
+ ███            █████████  ██████████ ██████   ██████ █████ ██████   █████ █████
+░░░███         ███░░░░░███░░███░░░░░█░░██████ ██████ ░░███ ░░██████ ░░███ ░░███
+  ░░░███      ███     ░░░  ░███  █ ░  ░███░█████░███  ░███  ░███░███ ░███  ░███
+    ░░░███   ░███          ░██████    ░███░░███ ░███  ░███  ░███░░███░███  ░███
+     ███░    ░███    █████ ░███░░█    ░███ ░░░  ░███  ░███  ░███ ░░██████  ░███
+   ███░      ░░███  ░░███  ░███ ░   █ ░███      ░███  ░███  ░███  ░░█████  ░███
+ ███░         ░░█████████  ██████████ █████     █████ █████ █████  ░░█████ █████
+░░░            ░░░░░░░░░  ░░░░░░░░░░ ░░░░░     ░░░░░ ░░░░░ ░░░░░    ░░░░░ ░░░░░
+
+
+Tips for getting started:
+1. Ask questions, edit files, or run commands.
+2. Be specific for the best results.
+3. /help for more information.
+
+
+                                                                                                                                                                                             
+╭──────────────────────────╮                                                                                                                                                                 
+│  > what this project do  │                                                                                                                                                                 
+╰──────────────────────────╯                                                                                                                                                                 
+                                                                                                                                                                                             
+✦ Based on the file structure and names, this project is a Gemini CLI: a command-line interface that integrates with Google's Gemini models to act as a software development
+  assistant.
+
+  Here's a breakdown of what it likely does:
+
+   1. Core Functionality: It provides a command-line interface (packages/cli) for developers to interact with an AI, presumably a Gemini model.
+
+   2. IDE Integration: It includes a companion extension for Visual Studio Code (packages/vscode-ide-companion), allowing the assistant to be used directly within the
+      editor.
+
+   3. Powerful Tooling: The assistant is equipped with tools to interact with your development environment, including:
+       * File System: Reading and writing files.
+       * Shell Commands: Executing commands in your terminal.
+       * Web Search: Searching the web for information.
+
+   4. Monorepo Structure: The project is organized as a TypeScript monorepo with distinct packages for the cli, the core logic, and the vscode-ide-companion.
+
+  In short, it's a sophisticated AI coding assistant that you can talk to in your terminal or VS Code, and it can perform development tasks for you.
+
+  To be certain, I will read the README.md file.
+ ╭────────────────────────╮
+ │ ✔  ReadFile README.md  │
+ ╰────────────────────────╯
+✕ [API Error: [LlmHttpClient] Request failed: HTTP 400  at
+  https://stork.enterprise.com/v1/projects/dbs-mod-adag-d4q9v/locations/us-central1/publishers/google/models/gemini-2.5-pro:streamGenerateContent
+  Response: [{"error":{"code":400,"message":"Invalid JSON payload received. Unknown name \"id\" at 'contents[5].parts[0].function_response': Cannot find
+  field.","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[5].parts[0].function_response","
+  description":"Invalid JSON payload received. Unknown name \"id\" at 'contents[5].parts[0].function_response': Cannot find field."}]}]}}]]
