@@ -140,6 +140,18 @@ export class GeminiChat {
     validateHistory(history);
   }
 
+  private sanitize(history: Content[]): void {
+    for (const content of history) {
+      if (content.parts) {
+        for (const part of content.parts) {
+          if (part.functionResponse?.id) {
+            delete part.functionResponse.id;
+          }
+        }
+      }
+    }
+  }
+
   private _getRequestTextFromContents(contents: Content[]): string {
     return contents
       .flatMap((content) => content.parts ?? [])
@@ -274,6 +286,7 @@ export class GeminiChat {
     const userContent = createUserContent(params.message);
     const requestContents = this.getHistory(true).concat(userContent);
 
+    this.sanitize(requestContents);
     this._logApiRequest(requestContents, this.config.getModel(), prompt_id);
 
     const startTime = Date.now();
@@ -382,6 +395,7 @@ export class GeminiChat {
     await this.sendPromise;
     const userContent = createUserContent(params.message);
     const requestContents = this.getHistory(true).concat(userContent);
+    this.sanitize(requestContents);
     this._logApiRequest(requestContents, this.config.getModel(), prompt_id);
 
     const startTime = Date.now();
