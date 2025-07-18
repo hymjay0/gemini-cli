@@ -24,6 +24,7 @@ export interface LlmHttpClientConfig {
   timeoutMs?: number; // Optional, default 30000
   maxAttempts?: number; // Optional, for retry logic
   logging?: boolean; // Enable debug logging
+  sanitizeFunctionResponse?: boolean; // Feature flag for sanitization
 }
 
 export interface GenerateContentRequest {
@@ -241,11 +242,26 @@ export class LlmHttpClient implements ContentGenerator {
       ...(Object.keys(generationConfig).length > 0 && { generationConfig }),
     };
 
+    // Create a deep copy to avoid any reference issues.
+    const requestData = JSON.parse(JSON.stringify(data));
+
+    if (this.config.sanitizeFunctionResponse && requestData.contents) {
+      for (const content of requestData.contents) {
+        if (content.parts) {
+          for (const part of content.parts) {
+            if (part.functionResponse?.id) {
+              delete part.functionResponse.id;
+            }
+          }
+        }
+      }
+    }
+
     const options: GaxiosOptions = {
       url,
       method: 'POST',
       headers,
-      data,
+      data: requestData,
       timeout: this.getTimeoutMs(),
       agent: this.getHttpsAgent(),
     };
@@ -359,11 +375,26 @@ export class LlmHttpClient implements ContentGenerator {
       ...(Object.keys(generationConfig).length > 0 && { generationConfig }),
     };
 
+    // Create a deep copy to avoid any reference issues.
+    const requestData = JSON.parse(JSON.stringify(data));
+
+    if (this.config.sanitizeFunctionResponse && requestData.contents) {
+      for (const content of requestData.contents) {
+        if (content.parts) {
+          for (const part of content.parts) {
+            if (part.functionResponse?.id) {
+              delete part.functionResponse.id;
+            }
+          }
+        }
+      }
+    }
+
     const options: GaxiosOptions = {
       url,
       method: 'POST',
       headers,
-      data,
+      data: requestData,
       timeout: this.getTimeoutMs(),
       agent: this.getHttpsAgent(),
     };
