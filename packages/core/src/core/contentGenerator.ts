@@ -290,10 +290,10 @@ export async function createContentGeneratorConfig(
       
       // Configure enterprise endpoints based on environment variables or defaults
       const enterpriseEndpoints: EnterpriseEndpointConfig = {
-        generateContent: process.env.GEMINI_ENTERPRISE_GENERATE_CONTENT !== 'false',
-        generateContentStream: process.env.GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM === 'true',
-        countTokens: process.env.GEMINI_ENTERPRISE_COUNT_TOKENS === 'true',
-        embedContent: process.env.GEMINI_ENTERPRISE_EMBED_CONTENT !== 'false',
+        generateContent: true,
+        generateContentStream: true,
+        countTokens: true,
+        embedContent: true,
       };
       
       contentGeneratorConfig.enterpriseEndpoints = enterpriseEndpoints;
