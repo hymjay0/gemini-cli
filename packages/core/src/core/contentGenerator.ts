@@ -351,7 +351,6 @@ export async function createContentGenerator(
       timeoutMs: 30000,
       maxAttempts: 3,
       logging: process.env.DEBUG === 'true',
-      sanitizeFunctionResponse: true, // Default to true to fix @google/genai issue adding non-standard id field in parallel tool call
     });
     // Wrap with EnterpriseContentGenerator for env var gating/fallbacks
     if (config.enterpriseEndpoints) {
