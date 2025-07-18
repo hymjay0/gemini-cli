@@ -2,11 +2,10 @@ import { Gaxios, GaxiosError } from 'gaxios';
 import * as fs from 'fs';
 
 class SsoAuthClient {
-  private readonly ssoUrl: string;
   private readonly cachePath = '.ssotoken';
 
   constructor() {
-    this.ssoUrl = process.env.SSO_SERVER || '';
+    // No longer read env vars in constructor
   }
   
   private async getTokenFromCache(): Promise<string | null> {
@@ -34,11 +33,13 @@ class SsoAuthClient {
   }
 
   async getToken(): Promise<string> {
-    if (!this.ssoUrl) {
+    // Read env vars at the time of use
+    const ssoUrl = process.env.SSO_SERVER || '';
+    if (!ssoUrl) {
       throw new Error('SSO_SERVER environment variable is not set');
     }
     
-    console.log(`SSO URL: ${this.ssoUrl}`);
+    console.log(`SSO URL: ${ssoUrl}`);
     const cachedToken = await this.getTokenFromCache();
     if (cachedToken) {
       return cachedToken;
@@ -68,18 +69,16 @@ class SsoAuthClient {
         }
       }
 
-      console.log(`SSO username: ${process.env.ADA_GENAI_SSO_ID || process.env.ONE_BANK_ID || 'test'}`);
+      const userid = process.env.ADA_GENAI_SSO_ID || process.env.ONE_BANK_ID || 'test';
+      const password = process.env.ADA_GENAI_SSO_PASSWORD || process.env.ONE_BANK_PASSWORD || 'test';
+      console.log(`SSO username: ${userid}`);
       const gaxiosInstance = new Gaxios();
       const response = await gaxiosInstance.request({
-        url: this.ssoUrl,
+        url: ssoUrl,
         method: 'POST',
         data: {
-          userid:
-            process.env.ADA_GENAI_SSO_ID || process.env.ONE_BANK_ID || 'test',
-          password:
-            process.env.ADA_GENAI_SSO_PASSWORD ||
-            process.env.ONE_BANK_PASSWORD ||
-            'test',
+          userid,
+          password,
           otp: '111111',
           otp_type: 'PUSH',
         },

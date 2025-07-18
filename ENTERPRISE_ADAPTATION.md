@@ -20,15 +20,9 @@ Enterprise environments often require:
 - No HTTP interceptor is used; all logic is centralized in the client.
 
 ### Endpoint Gating and Fallbacks
-- Endpoint availability is controlled by environment variables:
-  - `GEMINI_ENTERPRISE_GENERATE_CONTENT`
-  - `GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM`
-  - `GEMINI_ENTERPRISE_COUNT_TOKENS`
-  - `GEMINI_ENTERPRISE_EMBED_CONTENT`
-- If an endpoint is disabled or not available, the CLI provides graceful fallbacks:
-  - Streaming falls back to non-streaming
-  - Token counting falls back to local estimation
-  - Required endpoints (generateContent, embedContent) throw clear errors if disabled
+- All enterprise endpoints (`generateContent`, `generateContentStream`, `countTokens`, `embedContent`) are now always enabled by default in the code.
+- The previous environment variables for endpoint gating (`GEMINI_ENTERPRISE_GENERATE_CONTENT`, `GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM`, `GEMINI_ENTERPRISE_COUNT_TOKENS`, `GEMINI_ENTERPRISE_EMBED_CONTENT`) are now ignored.
+- If an endpoint is unavailable on the backend, the CLI will surface a clear error or fallback as appropriate (e.g., local token estimation).
 
 ### Authentication
 - SSO authentication is used by default to obtain a Bearer token for API requests.
@@ -62,37 +56,29 @@ export ADA_GENAI_SSO_PASSWORD="your-sso-password"
 # Model configuration
 export GEMINI_MODEL="gemini-2.5-pro-0506"
 
-# Endpoint gating (optional)
-export GEMINI_ENTERPRISE_GENERATE_CONTENT="true"
-export GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM="false"
-export GEMINI_ENTERPRISE_COUNT_TOKENS="false"
-export GEMINI_ENTERPRISE_EMBED_CONTENT="true"
-
 # Proxy and CA bundle (if needed)
 export HTTPS_PROXY="http://proxy.company.com:8080"
 export REQUESTS_CA_BUNDLE="/path/to/your/ca-bundle.crt"
 ```
 
 ## User Experience
-- On startup, the CLI displays the enterprise endpoint configuration and which endpoints are enabled/disabled.
-- When a fallback is used (e.g., streaming disabled), a one-time warning is shown.
-- If a required endpoint is disabled, a clear error is thrown.
+- On startup, the CLI displays the enterprise endpoint configuration.
+- If a backend endpoint is unavailable, a clear error or fallback is provided.
 
 ## Migration Summary
 - The HTTP interceptor is fully removed.
 - All enterprise LLM calls use the new HTTP client.
-- Endpoint gating and fallbacks are handled via environment variables and the client wrapper.
+- Endpoint gating via environment variables is no longer supported; all endpoints are enabled by default.
 - Security, proxy, and CA bundle support are built-in.
 
 ## Benefits
 - **Simplicity:** All logic is centralized in the HTTP client.
 - **Security:** No external telemetry, all requests go through the enterprise proxy.
-- **Flexibility:** Per-endpoint configuration and graceful fallbacks.
+- **Flexibility:** Graceful fallbacks for unavailable endpoints.
 - **Maintainability:** No global HTTP interception, easier to debug and extend.
 
 ## Troubleshooting
 - Ensure all required environment variables are set.
-- If an endpoint is unavailable, check the corresponding `GEMINI_ENTERPRISE_*` variable.
 - For authentication issues, verify SSO credentials or access token.
 - For network issues, check proxy and CA bundle configuration.
 

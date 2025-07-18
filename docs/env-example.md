@@ -84,16 +84,15 @@ export REQUESTS_CA_BUNDLE=/path/to/your/ca-bundle.crt
 const accessToken = await ssoAuth.getToken();
 ```
 
-### Enterprise Endpoint Availability
+## Enterprise Endpoint Availability
 
-Configure which endpoints are available in your enterprise environment:
+> Endpoint gating via environment variables is no longer supported. All enterprise endpoints (`generateContent`, `generateContentStream`, `countTokens`, `embedContent`) are now always enabled by default in the code. The following environment variables are now ignored:
+> - `GEMINI_ENTERPRISE_GENERATE_CONTENT`
+> - `GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM`
+> - `GEMINI_ENTERPRISE_COUNT_TOKENS`
+> - `GEMINI_ENTERPRISE_EMBED_CONTENT`
 
-| Variable | Description | Default | Notes |
-|----------|-------------|---------|-------|
-| `GEMINI_ENTERPRISE_GENERATE_CONTENT` | Enable generateContent endpoint | `true` | Usually available |
-| `GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM` | Enable generateContentStream endpoint | `false` | Often not available in enterprise |
-| `GEMINI_ENTERPRISE_COUNT_TOKENS` | Enable countTokens endpoint | `false` | Falls back to local estimation |
-| `GEMINI_ENTERPRISE_EMBED_CONTENT` | Enable embedContent endpoint | `true` | Usually available |
+If an endpoint is unavailable on the backend, the CLI will surface a clear error or fallback as appropriate (e.g., local token estimation).
 
 ## CA Bundle and HTTPS Configuration
 
@@ -168,10 +167,6 @@ ADA_GENAI_SSO_PASSWORD=your-sso-password
 
 # Alternative: Set GOOGLE_ACCESS_TOKEN explicitly to bypass SSO
 # GOOGLE_ACCESS_TOKEN=your-access-token  # Get with: gcloud auth print-access-token
-
-# Disable unavailable endpoints
-GEMINI_ENTERPRISE_GENERATE_CONTENT_STREAM=false
-GEMINI_ENTERPRISE_COUNT_TOKENS=false
 
 # Custom CA bundle for enterprise certificates
 REQUESTS_CA_BUNDLE=/path/to/your/ca-bundle.crt
