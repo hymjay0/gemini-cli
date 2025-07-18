@@ -318,8 +318,9 @@ export class LlmHttpClient implements ContentGenerator {
             if (part.inlineData) total += Math.ceil((part.inlineData.data?.length || 0) / 100);
           }
           if (item.role) total += 5;
+        } else {
+          total += Math.ceil(String(item).length / 4);
         }
-        total += Math.ceil(String(item).length / 4);
       }
       total += Math.ceil(contents.length * 3);
       return Math.max(1, total);
